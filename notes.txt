@@ -1,0 +1,85 @@
+1. build.sbt with jar placed on /Volumes/Data home folder
+
+! despite of the fact that ivy cache location folder has been set to /Volumes/Data/Users/andrey 
+build uses strange folder Library/Caches/Coursier/v1 where it keeps all dependencies
+
+2. Use spark 3, scala is 2.12.10
+3. structure is the same as in postcode
+4. sample date files from Scala/3rdparty/spark-def-guide
+5. building project
+
+$ sbt clean package
+
+to build fat jar you can use
+
+$ sbt assembly
+
+integrating with cassandra
+
+1. starting cassandra
+
+$ bin/cassandra
+
+3. getting the list of available keyspaces
+
+cqlsh> describe keyspaces;
+
+2. creating test keyspace
+
+cqlsh> create keyspace retail WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+cqlsh> create table retail.sales (invoice_no varchar, stock_code varchar, description varchar, quantity int, invoice_date varchar, unit_price double, customer_id double, country varchar, primary key (invoice_no, stock_code));
+
+starting spark-shell with spark-cassandra-connector connectivity support
+
+$ bin/spark-shell --driver-memory 512m --conf spark.cassandra.connection.host=localhost --packages com.datastax.spark:spark-cassandra-connector_2.12:3.0.0
+
+checking source dataframe schema
+
+sales.columns: Array[String] - column names
+sales.schea: StructType - StructType(StructField...) schema
+sales.first: Row - getting first row
+
+you can also call row.schema
+
+performing conversion to tuples
+
+salesRdd.map(r => (r.getString(0), r.getString(1), r.getString(2), r.getInt(3), r.getString(4), r.getDouble(5), r.getDouble(6), r.getString(7))).first
+
+saving data to cassandra table
+
+import com.datastax.spark.connector._
+
+sales.rdd.map(r => (r.getString(0), r.getString(1), r.getString(2), r.getInt(3), r.getString(4), r.getDouble(5), r.getDouble(6), r.getString(7)))
+		.saveToCassandra("retail", "sales", SomeColumns("invoice_no", "stock_code", "description", "quantity", "invoice_date", "unit_price", "customer_id", "country"))
+
+now data can be read back from cassandra table using sc.cassandraTable ( i'm pretty sure that the same conversion exists for spark structured API )
+
+if not you can always use spark.createDataFrame(rdd, schema) see STDG page 73
+or just call toDF on returned from sc.cassandraTable
+
+application runtime parameters can be configured when running spark-submit
+or by modifing conf/spark-defaults.conf
+or by using SparkConf ( shen creating SparkContext ) or SparkSession.builder().config(...)
+
+effective parameters can be checked using Spark UI
+
+starting local spark cluster
+
+$ sbin/start-master.sh
+$ sbin/start-slave.sh spark://aurora.local:7077
+
+running application
+
+bin/spark-submit --name SalesTableDatasetReader --class edu.onefactor.SalesTableDatasetReader --master spark://aurora.local:7077 --deploy-mode client --conf spark.cassandra.connection.host=localhost  /Volumes/Data/Users/andrey/Documents/Scala/spark/1factor/target/scala-2.12/onboarding-assembly-1.0-SNAPSHOT.jar
+
+running job stats can be seen by connecting to http://localhost:4040
+
+any dataset can be cached using cache method ( it's the same as persist with default storage level )
+
+running in local mode
+
+$ spark-submit --name MockScoresDataframeWriter --class edu.onefactor.DataframeWriter --master local target/scala-2.11/onboarding_2.11-1.0-SNAPSHOT.jar
+
+submitting application to yarn
+
+$ spark-submit --name dummy-df-writer --master yarn --deploy-mode cluster --queue root.uat --class edu.onefactor.DataframeWriter target/scala-2.11/onboarding_2.11-1.0-SNAPSHOT.jar
