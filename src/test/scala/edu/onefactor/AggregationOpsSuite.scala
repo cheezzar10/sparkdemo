@@ -20,12 +20,10 @@ class AggregationOpsSuite extends FunSuite with BeforeAndAfterAll {
             .option("inferSchema", "true")
             .csv("file:///Users/andrey.smirnov/Documents/projects/samples/spark-def-guide/data/retail-data/all/online-retail-dataset.csv")
 
-        // df.show(truncate=false)
-
         import spark.implicits._
 
         val invoiceStats = df.where(col("InvoiceNo") === "a")
-            // .withColumn("partition", spark_partition_id())
+            .withColumn("partition", spark_partition_id())
             .groupBy("partition")
             .agg(count("*").as("rows"), countDistinct("InvoiceDate").as("dates"))
             .groupBy() // can be dropped and next line can be replaced with select(max("rows").as("max_rows"), max("dates").as("max_dates"))
