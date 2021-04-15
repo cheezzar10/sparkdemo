@@ -15,7 +15,7 @@ class SparkSessionOpsSuite extends FunSuite {
 
     test("spark session should be created successfully") {
         val fs = FileSystem.get(
-            URI.create("/shared/andrey.smirnov"), 
+            URI.create("/shared/andrey.smirnov"),
             spark.sparkContext.hadoopConfiguration)
 
         val entries = fs.listStatus(new Path("/"))
