@@ -83,3 +83,10 @@ $ spark-submit --name MockScoresDataframeWriter --class edu.onefactor.DataframeW
 submitting application to yarn
 
 $ spark-submit --name dummy-df-writer --master yarn --deploy-mode cluster --queue root.uat --class edu.onefactor.DataframeWriter target/scala-2.11/onboarding_2.11-1.0-SNAPSHOT.jar
+
+$ spark-submit --name rf-classifier-reproducible-fit --master yarn --deploy-mode cluster --queue root.adhoc --driver-memory 8g --executor-cores 16 --num-executors 4 --executor-memory 8g --class edu.onefactor.ml.RandomForestClassificationModelTrainer target/scala-2.11/onboarding-assembly-1.0-SNAPSHOT.jar
+
+also
+
+--executor-memory
+--num-executors
