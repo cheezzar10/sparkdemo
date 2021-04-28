@@ -3,8 +3,10 @@ package edu.onefactor
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{RandomForestClassificationModel, RandomForestClassifier}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{OneHotEncoder, OneHotEncoderEstimator, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.feature.{OneHotEncoderEstimator, StringIndexer, VectorAssembler}
+import org.apache.spark.ml.linalg.{Vector => MLVector}
 import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -43,7 +45,9 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
         coalesce(col("L0_S0_F2"), lit(0.0)).as("L0_S0_F2"),
         coalesce(col("L0_S0_F4"), lit(0.0)).as("L0_S0_F4"))
 
-    showDataset("train dataset w/o nulls", trainData)()
+    showDataset("train dataset w/o nulls", trainData) { df =>
+      df.where(col("label") =!= 0.0)
+    }
 
     val indexer = new StringIndexer()
       .setHandleInvalid("skip")
@@ -77,8 +81,15 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
     val pipeline = new Pipeline()
       .setStages(Array(indexer, encoder, vectorAssembler, randomForestClassifier))
 
+    // val pipelineModel = trainRandomForestClassifierModelInstance(pipeline, trainData)
+
+    val optimalModel = trainOptimalRandomForestClassifierModel(pipeline, trainData)
+  }
+
+  private def trainRandomForestClassifierModelInstance(pipeline: Pipeline, trainData: DataFrame) = {
     val pipelineModel = pipeline.fit(trainData)
 
+    // processing train dataset with model
     val result = pipelineModel.transform(trainData)
 
     showDataset("result", result) { df =>
@@ -100,17 +111,23 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
       s"max bins = ${randomForestClassifierModel.getMaxBins}, " +
       s"max depth = ${randomForestClassifierModel.getMaxDepth}")
 
+    pipelineModel
+  }
+
+  private def trainOptimalRandomForestClassifierModel(pipeline:Pipeline, trainData: DataFrame) = {
     val evaluator = new BinaryClassificationEvaluator()
       .setMetricName("areaUnderROC") // ROC AUC ( area under curve )
       .setRawPredictionCol("prediction")
       .setLabelCol("label")
 
+    val randomForestClassifier = pipeline.getStages.last.asInstanceOf[RandomForestClassifier]
+
     val randomForestClassifierParams = new ParamGridBuilder()
-      .addGrid(randomForestClassifier.numTrees, Array(10, 20))
-      .addGrid(randomForestClassifier.featureSubsetStrategy, Array("auto", "all"))
+      .addGrid(randomForestClassifier.numTrees, Array(20))
+      .addGrid(randomForestClassifier.featureSubsetStrategy, Array("auto"))
       .addGrid(randomForestClassifier.impurity, Array("gini"))
       .addGrid(randomForestClassifier.maxBins, Array(32))
-      .addGrid(randomForestClassifier.maxDepth, Array(5, 7))
+      .addGrid(randomForestClassifier.maxDepth, Array(7))
       .build()
 
     val crossValidator = new CrossValidator()
@@ -121,11 +138,26 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
 
     val crossValidatorModel = crossValidator.fit(trainData)
 
-    val optimalPipelineModel = crossValidatorModel.bestModel
+    // val optimalPipelineModel = crossValidatorModel.bestModel
 
     val optimalResult = crossValidatorModel.transform(trainData)
 
-    showDataset("best model result", optimalResult)()
+    val toArray = udf { vector: MLVector =>
+      vector.toArray
+    }
+
+    showDataset("best model result", optimalResult) { df =>
+      df.where(col("label") =!= 0.0)
+        .select(
+          col("label"),
+          toArray(col("rawPrediction")).as("rawPrediction"),
+          toArray(col("probability")).as("probability"),
+          col("prediction"))
+        .withColumn("rawPredictionSum", expr("rawPrediction[0] + rawPrediction[1]"))
+        .withColumn("probabilitySum", expr("probability[0] + probability[1]"))
+    }
+
+    crossValidatorModel
   }
 
   override def afterAll(): Unit = {
@@ -138,8 +170,10 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
                            numRows: Int = 20)
                          (transformer: DataFrame => DataFrame = identity): Unit = {
 
-    println(s"dataset: $name with schema: ${df.schema}")
+    val transformedDataFrame = transformer(df)
 
-    transformer(df).show(numRows = numRows, truncate = false)
+    println(s"dataset: $name with schema: ${transformedDataFrame.schema}")
+
+    transformedDataFrame.show(numRows = numRows, truncate = false)
   }
 }
