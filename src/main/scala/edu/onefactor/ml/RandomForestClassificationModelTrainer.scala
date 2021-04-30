@@ -1,9 +1,9 @@
 package edu.onefactor.ml
 
 import org.apache.spark.ml.classification.RandomForestClassifier
-import org.apache.spark.ml.linalg.{Vector => MLVector}
+import org.apache.spark.ml.linalg.{ Vector => MLVector }
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{ DataFrame, SparkSession }
 
 object RandomForestClassificationModelTrainer {
   private val seed = 42
@@ -72,8 +72,7 @@ object RandomForestClassificationModelTrainer {
       .withColumn("probabilitySum", expr("probability[0] + probability[1]"))
   }
 
-  private def showDataset(name: String, df: DataFrame, numRows: Int = 20)
-                         (tf: DataFrame => DataFrame = identity): Unit = {
+  private def showDataset(name: String, df: DataFrame, numRows: Int = 20)(tf: DataFrame => DataFrame = identity): Unit = {
 
     val tdf = tf(df)
 

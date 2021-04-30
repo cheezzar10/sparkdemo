@@ -86,7 +86,10 @@ $ spark-submit --name dummy-df-writer --master yarn --deploy-mode cluster --queu
 
 $ spark-submit --name rf-classifier-reproducible-fit --master yarn --deploy-mode cluster --queue root.adhoc --driver-memory 8g --executor-cores 16 --num-executors 4 --executor-memory 8g --class edu.onefactor.ml.RandomForestClassificationModelTrainer target/scala-2.11/onboarding-assembly-1.0-SNAPSHOT.jar
 
+$ spark-submit --name rf-classifier-oom --master yarn --deploy-mode cluster --queue root.adhoc --driver-memory 2g --executor-cores 16 --num-executors 2 --executor-memory 2g --conf "spark.executor.extraJavaOptions=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/shared/andrey.smirnov/spark.executor.heapdump" --class edu.onefactor.ml.RandomForestClassificationModelTrainer target/scala-2.11/onboarding_2.11-1.0-SNAPSHOT.jar 5
+
 also
 
---executor-memory
---num-executors
+--executor-cores ( spark.executor.cores )
+--executor-memory ( spark.executor.memory  )
+--num-executors ( spark.executor.instances )

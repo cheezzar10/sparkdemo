@@ -6,3 +6,12 @@ target
 project/metals.sbt
 project/project
 
+/bin/
+
+.cache-main
+.cache-tests
+.classpath
+.gitignore.swp
+.project
+.settings
+

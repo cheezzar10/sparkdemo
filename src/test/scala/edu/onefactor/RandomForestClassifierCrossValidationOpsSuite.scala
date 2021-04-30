@@ -1,14 +1,14 @@
 package edu.onefactor
 
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.{RandomForestClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.classification.{ RandomForestClassificationModel, RandomForestClassifier }
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
-import org.apache.spark.ml.feature.{OneHotEncoderEstimator, StringIndexer, VectorAssembler}
-import org.apache.spark.ml.linalg.{Vector => MLVector}
-import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
+import org.apache.spark.ml.feature.{ OneHotEncoderEstimator, StringIndexer, VectorAssembler }
+import org.apache.spark.ml.linalg.{ Vector => MLVector }
+import org.apache.spark.ml.tuning.{ CrossValidator, ParamGridBuilder }
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.apache.spark.sql.{ DataFrame, SparkSession }
+import org.scalatest.{ BeforeAndAfterAll, FunSuite }
 
 class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with BeforeAndAfterAll {
   lazy val spark = SparkSession.builder()
@@ -114,7 +114,7 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
     pipelineModel
   }
 
-  private def trainOptimalRandomForestClassifierModel(pipeline:Pipeline, trainData: DataFrame) = {
+  private def trainOptimalRandomForestClassifierModel(pipeline: Pipeline, trainData: DataFrame) = {
     val evaluator = new BinaryClassificationEvaluator()
       .setMetricName("areaUnderROC") // ROC AUC ( area under curve )
       .setRawPredictionCol("prediction")
@@ -165,10 +165,9 @@ class RandomForestClassifierCrossValidationOpsSuite extends FunSuite with Before
   }
 
   private def showDataset(
-                           name: String,
-                           df: DataFrame,
-                           numRows: Int = 20)
-                         (transformer: DataFrame => DataFrame = identity): Unit = {
+    name: String,
+    df: DataFrame,
+    numRows: Int = 20)(transformer: DataFrame => DataFrame = identity): Unit = {
 
     val transformedDataFrame = transformer(df)
 
