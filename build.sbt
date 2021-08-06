@@ -22,6 +22,8 @@ libraryDependencies ++= Seq(
 // scalaSource in Jmh := baseDirectory.value / "src/jmh/scala"
 // lazy val root = Project(id = "root", file(".")).enablePlugins(JmhPlugin)
 
+parallelExecution in Test := false
+
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
 // scalacOptions ++= Seq("-Xprint:typer")
