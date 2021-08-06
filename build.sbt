@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
 // lazy val root = Project(id = "root", file(".")).enablePlugins(JmhPlugin)
 
 parallelExecution in Test := false
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-u", (target.value / "scalatest-report").getAbsolutePath)
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
