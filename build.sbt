@@ -3,7 +3,7 @@ name := "onboarding"
 version := "1.0-SNAPSHOT"
 scalaVersion := "2.11.12"
 
-val sparkVersion = "2.4.7"
+val sparkVersion = "2.3.2"
 
 // additional resolvers can be defined here
 
